@@ -1,0 +1,144 @@
+{% extends 'habits/base.html' %}
+
+{% block title %}Dashboard - Habit Tracker{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="display-5 fw-bold mb-3">
+        <i class="bi bi-calendar-check"></i> My Habits
+    </h1>
+    <a href="{% url 'habit_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Add New Habit
+    </a>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stats-card text-center">
+            <h3 class="mb-0">{{ total_habits }}</h3>
+            <p class="mb-0">Total Habits</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stats-card text-center">
+            <h3 class="mb-0">{{ completed_today }}/{{ total_habits }}</h3>
+            <p class="mb-0">Completed Today</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stats-card text-center">
+            <h3 class="mb-0">{{ today|date:"M d" }}</h3>
+            <p class="mb-0">Today's Date</p>
+        </div>
+    </div>
+</div>
+
+<!-- Habits List -->
+{% if habits %}
+    <div class="row">
+        {% for habit in habits %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card habit-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="flex-grow-1">
+                            <h5 class="card-title mb-1">
+                                <span style="color: {{ habit.color }};">
+                                    <i class="bi bi-circle-fill" style="font-size: 0.5em;"></i>
+                                </span>
+                                {{ habit.name }}
+                            </h5>
+                            {% if habit.description %}
+                                <p class="card-text text-muted small mb-2">{{ habit.description }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'habit_analytics' habit.pk %}" class="btn btn-sm btn-outline-primary" title="Analytics">
+                                <i class="bi bi-graph-up"></i>
+                            </a>
+                            <a href="{% url 'habit_update' habit.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div 
+                            class="habit-checkbox {% if habit.is_completed_today %}checked{% endif %}" 
+                            data-habit-id="{{ habit.pk }}"
+                            onclick="toggleHabit({{ habit.pk }})"
+                        >
+                            {% if habit.is_completed_today %}
+                                <i class="bi bi-check-lg text-white" style="font-size: 24px; display: block; text-align: center; line-height: 34px;"></i>
+                            {% else %}
+                                <i class="bi bi-check-lg" style="display: none;"></i>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <div class="streak-badge">
+                                <i class="bi bi-fire"></i> {{ habit.get_current_streak }} day streak
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Best: {{ habit.get_longest_streak }} days
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="progress mb-2" style="height: 8px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ habit.get_completion_rate }}%; background: {{ habit.color }};">
+                        </div>
+                    </div>
+                    <small class="text-muted">{{ habit.get_completion_rate }}% completion (30 days)</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-calendar-x display-1 text-muted"></i>
+        <h3 class="mt-3">No habits yet!</h3>
+        <p class="text-muted">Create your first habit to start tracking your progress.</p>
+        <a href="{% url 'habit_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create Your First Habit
+        </a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleHabit(habitId) {
+    const checkbox = document.querySelector(`[data-habit-id="${habitId}"]`);
+    const icon = checkbox.querySelector('i');
+    
+    fetch(`/habit/${habitId}/toggle/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.completed) {
+            checkbox.classList.add('checked');
+            icon.classList.add('text-white');
+            icon.style.display = 'block';
+        } else {
+            checkbox.classList.remove('checked');
+            icon.classList.remove('text-white');
+            icon.style.display = 'none';
+        }
+        // Update streak if displayed
+        const streakBadge = checkbox.closest('.card-body').querySelector('.streak-badge');
+        if (streakBadge) {
+            streakBadge.innerHTML = `<i class="bi bi-fire"></i> ${data.streak} day streak`;
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %}

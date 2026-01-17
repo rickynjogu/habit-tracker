@@ -1,0 +1,144 @@
+{% extends 'habits/base.html' %}
+
+{% block title %}{{ habit.name }} Analytics - Habit Tracker{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-3">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+    <h2 class="display-6 fw-bold">
+        <span style="color: {{ habit.color }};">
+            <i class="bi bi-circle-fill" style="font-size: 0.5em;"></i>
+        </span>
+        {{ habit.name }} - Analytics
+    </h2>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center p-3 border-0 shadow-sm">
+            <h3 class="text-primary mb-1">{{ current_streak }}</h3>
+            <p class="text-muted mb-0">Current Streak</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3 border-0 shadow-sm">
+            <h3 class="text-warning mb-1">{{ longest_streak }}</h3>
+            <p class="text-muted mb-0">Longest Streak</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3 border-0 shadow-sm">
+            <h3 class="text-success mb-1">{{ completion_rate_7 }}%</h3>
+            <p class="text-muted mb-0">Last 7 Days</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3 border-0 shadow-sm">
+            <h3 class="text-info mb-1">{{ completion_rate_30 }}%</h3>
+            <p class="text-muted mb-0">Last 30 Days</p>
+        </div>
+    </div>
+</div>
+
+<!-- Chart -->
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3">30-Day Activity Calendar</h5>
+        <canvas id="habitChart" height="80"></canvas>
+    </div>
+</div>
+
+<!-- Weekly Breakdown -->
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Weekly Breakdown</h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Week</th>
+                        <th>Completed Days</th>
+                        <th>Total Days</th>
+                        <th>Completion Rate</th>
+                        <th>Progress Bar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for week in weeks_data %}
+                    <tr>
+                        <td><strong>Week {{ week.week }}</strong></td>
+                        <td>{{ week.completed }}</td>
+                        <td>{{ week.total }}</td>
+                        <td>{{ week.percentage }}%</td>
+                        <td>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ week.percentage }}%; background: {{ habit.color }};">
+                                    {{ week.percentage }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const completionData = {{ completion_data|safe }};
+const habitColor = '{{ habit.color }}';
+
+// Prepare data for chart
+const labels = completionData.map(d => d.day_name);
+const data = completionData.map(d => d.completed ? 1 : 0);
+
+const ctx = document.getElementById('habitChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Completed',
+            data: data,
+            backgroundColor: data.map(d => d === 1 ? habitColor : '#e5e7eb'),
+            borderColor: habitColor,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 1,
+                ticks: {
+                    stepSize: 1,
+                    callback: function(value) {
+                        return value === 1 ? '✓' : '';
+                    }
+                }
+            },
+            x: {
+                ticks: {
+                    maxRotation: 0,
+                    minRotation: 0
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
