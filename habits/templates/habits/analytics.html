@@ -19,25 +19,25 @@
 <div class="row mb-4">
     <div class="col-md-3">
         <div class="card text-center p-3 border-0 shadow-sm">
-            <h3 class="text-primary mb-1">{{ current_streak }}</h3>
+            <h3 style="color: var(--primary-accent);" class="mb-1">{{ current_streak }}</h3>
             <p class="text-muted mb-0">Current Streak</p>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card text-center p-3 border-0 shadow-sm">
-            <h3 class="text-warning mb-1">{{ longest_streak }}</h3>
+            <h3 style="color: var(--primary-accent);" class="mb-1">{{ longest_streak }}</h3>
             <p class="text-muted mb-0">Longest Streak</p>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card text-center p-3 border-0 shadow-sm">
-            <h3 class="text-success mb-1">{{ completion_rate_7 }}%</h3>
+            <h3 style="color: var(--success-color);" class="mb-1">{{ completion_rate_7 }}%</h3>
             <p class="text-muted mb-0">Last 7 Days</p>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card text-center p-3 border-0 shadow-sm">
-            <h3 class="text-info mb-1">{{ completion_rate_30 }}%</h3>
+            <h3 style="color: var(--primary-accent);" class="mb-1">{{ completion_rate_30 }}%</h3>
             <p class="text-muted mb-0">Last 30 Days</p>
         </div>
     </div>
@@ -99,6 +99,10 @@ const habitColor = '{{ habit.color }}';
 const labels = completionData.map(d => d.day_name);
 const data = completionData.map(d => d.completed ? 1 : 0);
 
+// Get theme-aware colors
+const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+const inactiveColor = isDark ? '#3B3B3D' : '#e5e7eb';
+
 const ctx = document.getElementById('habitChart').getContext('2d');
 new Chart(ctx, {
     type: 'bar',
@@ -107,7 +111,7 @@ new Chart(ctx, {
         datasets: [{
             label: 'Completed',
             data: data,
-            backgroundColor: data.map(d => d === 1 ? habitColor : '#e5e7eb'),
+            backgroundColor: data.map(d => d === 1 ? habitColor : inactiveColor),
             borderColor: habitColor,
             borderWidth: 1
         }]
@@ -123,13 +127,21 @@ new Chart(ctx, {
                     stepSize: 1,
                     callback: function(value) {
                         return value === 1 ? '✓' : '';
-                    }
+                    },
+                    color: isDark ? '#B0B0B0' : '#7C7C7C'
+                },
+                grid: {
+                    color: isDark ? '#3B3B3D' : '#E5E5E5'
                 }
             },
             x: {
                 ticks: {
                     maxRotation: 0,
-                    minRotation: 0
+                    minRotation: 0,
+                    color: isDark ? '#B0B0B0' : '#7C7C7C'
+                },
+                grid: {
+                    color: isDark ? '#3B3B3D' : '#E5E5E5'
                 }
             }
         },
